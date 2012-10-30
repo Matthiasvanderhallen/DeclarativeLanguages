@@ -49,25 +49,41 @@ sorteerLinks(>, Link1, Link2):-
 	Link2 = link(_, pos(XB2,YB2), pos(XE2,YE2)),
 	abs(XB1-XE1)+abs(YB1-YE1) >= abs(XB2-XE2)+abs(YB2-YE2).
 
-vindLink(Grid, [Link1|Tail], Gebruikt, Solution) :-
-	Link1 = link(_, pos(X1,Y1), pos(X2,Y2)),
-	findall(Pad, isPadTussen(Grid, pos(X1,Y1), pos(X2,Y2), Gebruikt, Pad), Solution).
+sorteerVolgensLength(<, Lijst1, Lijst2):-
+	length(Lijst1, Length1),
+	length(Lijst2, Length2),
+	Length1<Length2.
+
+sorteerVolgensLength(>, Lijst1, Lijst2):-
+	length(Lijst1, Length1),
+	length(Lijst2, Length2),
+	Length1>=Length2.
+
+vindLink(_, [], _, []):-
+	!.
+
+vindLink(Grid, [Link1|Tail], Gebruikt, [connects(Linked, GekozenPad)|Solution]) :-
+	Link1 = link(Linked, Begin, Einde),
+	findall(Pad, isPadTussen(Grid, Begin, Einde, Gebruikt, Pad), Paden),
+	predsort(sorteerVolgensLength, Paden, SortedPaden),
+	member(GekozenPad, SortedPaden),
+	append(GekozenPad, Gebruikt, NewGebruikt),
+	vindLink(Grid,Tail,NewGebruikt,Solution).
 
 %Deze methode
 isPadTussen(Grid, Begin, Einde, Gebruikt, Pad):-
 	isPadTussen(Grid,Begin, Einde, Gebruikt, [Begin], Pad).
 
-%isPadTussen(Grid, Begin, Einde,Gebruikt, Acc,[Einde|Acc]) :-
-	%areConnected(Grid,Begin, Einde).
+isPadTussen(Grid, Begin, Einde,_, Acc,[Einde|Acc]) :-
+	areConnected(Grid,Begin, Einde).
 
 isPadTussen(Grid, Begin,Einde,Gebruikt, Acc,Pad):-
-	(areConnected(Grid, Begin, Einde)
-	->  Pad = [Einde|Acc]
-	;   (areConnected(Grid,Begin,Stap),
-	    \+ member(Stap, Acc),
-	    \+ member(Stap, Gebruikt),
-	    isPadTussen(Grid, Stap, Einde,Gebruikt, [Stap|Acc], Pad))
-	).
+%	(areConnected(Grid, Begin, Einde)
+%	->  Pad = [Einde|Acc]
+	areConnected(Grid,Begin,Stap),
+	\+ member(Stap, Acc),
+	\+ member(Stap, Gebruikt),
+	isPadTussen(Grid, Stap, Einde,Gebruikt, [Stap|Acc], Pad).
 
 areConnected(Grid, Pos1, Pos2):-
 	Pos1 = pos(X1,Y1),
