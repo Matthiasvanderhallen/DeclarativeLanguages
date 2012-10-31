@@ -21,7 +21,7 @@ solve(PuzzleId,Solution) :-
 % arukone/3 - zelf te implementeren!
 arukone(Grid,Links,Solution) :-
 	predsort(sorteerLinks, Links, SortedLinks),
-	allStartAndEndPos(Links, Gebruikt),
+	allStartAndEndPos(Links,[], Gebruikt),
 	vindLink(Grid, SortedLinks, Gebruikt, Solution).
 
 %testStartEndPos(Set):-
@@ -32,12 +32,11 @@ arukone(Grid,Links,Solution) :-
 %	allStartAndEndPos(Voorbeeld, Set).
 
 
-allStartAndEndPos([Link], [Start, Einde]):-
-	Link = link(_, Start, Einde).
+allStartAndEndPos([], Acc, Acc).
 
-allStartAndEndPos([Head|Tail], [Start,Einde|Set]):-
+allStartAndEndPos([Head|Tail], Acc, Set):-
 	Head = link(_, Start, Einde),
-	allStartAndEndPos(Tail, Set).
+	allStartAndEndPos(Tail, [Start,Einde|Acc], Set).
 
 sorteerLinks(<, Link1, Link2):-
 	Link1 = link(_, pos(XB1,YB1), pos(XE1,YE1)),
@@ -59,16 +58,81 @@ sorteerVolgensLength(>, Lijst1, Lijst2):-
 	length(Lijst2, Length2),
 	Length1>=Length2.
 
-vindLink(_, [], _, []):-
+vindLink(Grid, Lijst, Gebruikt, Solution):-
+	vindLink(Grid, Lijst, Gebruikt, [], Solution).
+
+vindLink(_, [], _, Acc, Acc):-
 	!.
 
-vindLink(Grid, [Link1|Tail], Gebruikt, [connects(Linked, GekozenPad)|Solution]) :-
+vindLink(Grid, [Link1|Tail], Gebruikt, Acc, Solution) :-
 	Link1 = link(Linked, Begin, Einde),
-	findall(Pad, isPadTussen(Grid, Begin, Einde, Gebruikt, Pad), Paden),
+	%forbiddenNodes(Grid, Tail, Gebruikt, ForbiddenNodes),
+	%append(ForbiddenNodes, Gebruikt, NietTeGebruiken),
+	NietTeGebruiken = Gebruikt,
+	findall(Pad, isPadTussen(Grid, Begin, Einde, NietTeGebruiken, Pad), Paden),
 	predsort(sorteerVolgensLength, Paden, SortedPaden),
+	%isPadTussen(Grid, Begin, Einde, NietTeGebruiken, gekozenPad),
 	member(GekozenPad, SortedPaden),
+	%\+ containsForbiddenNode(GekozenPad, ForbiddenNodes),
 	append(GekozenPad, Gebruikt, NewGebruikt),
-	vindLink(Grid,Tail,NewGebruikt,Solution).
+	othersHavePath(Grid,Tail, NewGebruikt),
+	NewAcc = [connects(Linked,GekozenPad)|Acc],
+	vindLink(Grid,Tail,NewGebruikt,NewAcc, Solution).
+
+othersHavePath(_,[],_).
+
+othersHavePath(Grid,[Head|Tail], NewGebruikt):-
+	Head = link(_, Begin, Einde),
+	isPadTussen(Grid, Begin, Einde, NewGebruikt, _),
+	othersHavePath(Grid, Tail, NewGebruikt).
+
+containsForbiddenNode(GekozenPad, ForbiddenNodes):-
+	member(X, GekozenPad),
+	member(X, ForbiddenNodes).
+
+forbiddenNodes(Grid, Links, Gebruikt, ForbiddenNodes):-
+	allStartAndEndPos(Links,[],Positions),
+	forbiddenNodes(Grid, Positions, Gebruikt, [], ForbiddenNodes).
+
+forbiddenNodes(_, [], _, Acc, Acc):-
+	!.
+
+forbiddenNodes(Grid, [Head|Tail], Gebruikt, Acc, ForbiddenNodes):-
+	findall(Pos2, (areConnected(Grid,Head,Pos2), \+ member(Pos2, Gebruikt), \+ member(Pos2, Acc)), Connections),
+	length(Connections, Length),
+	(Length =:=1
+	->  Connections = [Head2],
+	    NewAcc = [Head2|Acc]
+	    %NewTail = [Head2|Tail]
+	;   NewAcc = Acc),
+	    %NewTail = Tail),
+	forbiddenNodes(Grid, Tail, Gebruikt, NewAcc, ForbiddenNodes).
+
+
+testforbiddenNodes(ForbiddenNodes):-
+	Test = [link(1,pos(2,1),pos(4,4)),
+		link(2,pos(1,1),pos(2,2)),
+		link(3,pos(2,4),pos(5,4)),
+		link(4,pos(4,2),pos(2,5))
+	       ],
+	allStartAndEndPos(Test,[], Gebruikt),
+	forbiddenNodes(grid(5,5), Test, Gebruikt, ForbiddenNodes).
+
+%forbiddenNodes(Grid, [Link|Tail],Gebruikt, Acc, ForbiddenNodes):-
+%	Link = link(_, Begin, Einde),
+	%findall(Pos2, (areConnected(Grid, Begin, Pos2), \+ member(Pos2, Gebruikt)), ConnectionsBeginning),
+	%length(ConnectionsBeginning, Length1),
+	%(Length1 =:= 1
+	%->  append(ConnectionsBeginning, Acc, Forbidden1)
+	%;   Forbidden1 = Acc),
+	%findall(Pos2, (areConnected(Grid, Einde, Pos2), \+ member(Pos2, Gebruikt)), ConnectionsEinde),
+	%length(ConnectionsEinde, Length2),
+	%(Length2 =:= 1
+	%->  append(ConnectionsEinde, Forbidden1, Forbidden2)
+	%;   Forbidden2 = Forbidden1),
+	%forbiddenNodes(Grid, Tail, Gebruikt, Forbidden2, ForbiddenNodes).
+
+%forbiddenNodes(_, [], _, Acc, Acc).
 
 %Deze methode
 isPadTussen(Grid, Begin, Einde, Gebruikt, Pad):-
@@ -83,7 +147,7 @@ isPadTussen(Grid, Begin,Einde,Gebruikt, Acc,Pad):-
 	areConnected(Grid,Begin,Stap),
 	\+ member(Stap, Acc),
 	\+ member(Stap, Gebruikt),
-	isPadTussen(Grid, Stap, Einde,Gebruikt, [Stap|Acc], Pad).
+	isPadTussen(Grid, Stap, Einde, Gebruikt, [Stap|Acc], Pad).
 
 areConnected(Grid, Pos1, Pos2):-
 	Pos1 = pos(X1,Y1),
@@ -112,7 +176,6 @@ areConnected(Grid, Pos1, Pos2):-
 	Y2 is Y1+1,
 	onGrid(Grid,Pos1),
 	onGrid(Grid,Pos2).
-
 
 onGrid(Grid,Pos) :-
 	Pos = pos(X1,Y1),
