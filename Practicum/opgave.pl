@@ -20,8 +20,9 @@ solve(PuzzleId,Solution) :-
 
 % arukone/3 - zelf te implementeren!
 arukone(Grid,Links,Solution) :-
-	predsort(sorteerLinks, Links, SortedLinks),
+	%predsort(sorteerLinks, Links, SortedLinks),
 	allStartAndEndPos(Links,[], Gebruikt),
+	SortedLinks = Links,
 	vindLink(Grid, SortedLinks, Gebruikt, Solution).
 
 %testStartEndPos(Set):-
@@ -37,6 +38,12 @@ allStartAndEndPos([], Acc, Acc).
 allStartAndEndPos([Head|Tail], Acc, Set):-
 	Head = link(_, Start, Einde),
 	allStartAndEndPos(Tail, [Start,Einde|Acc], Set).
+
+allStartAndEndPos2([], Acc, Acc).
+
+allStartAndEndPos2([Head|Tail], Acc, Set):-
+	Head = link(Linked, Start, Einde),
+	allStartAndEndPos2(Tail, [bevat((Linked,start),Start),bevat((Linked,einde),Einde)|Acc], Set).
 
 sorteerLinks(<, Link1, Link2):-
 	Link1 = link(_, pos(XB1,YB1), pos(XE1,YE1)),
@@ -59,23 +66,24 @@ sorteerVolgensLength(>, Lijst1, Lijst2):-
 	Length1>=Length2.
 
 vindLink(Grid, Lijst, Gebruikt, Solution):-
-	vindLink(Grid, Lijst, Gebruikt, [], Solution).
-
-vindLink(_, [], _, Acc, Acc):-
+	vindLink(Grid, Lijst, Gebruikt, [], Solution),
 	!.
+
+vindLink(Grid, [], _, Acc, Acc).
 
 vindLink(Grid, [Link1|Tail], Gebruikt, Acc, Solution) :-
 	Link1 = link(Linked, Begin, Einde),
-	%forbiddenNodes(Grid, Tail, Gebruikt, ForbiddenNodes),
-	%append(ForbiddenNodes, Gebruikt, NietTeGebruiken),
-	NietTeGebruiken = Gebruikt,
-	findall(Pad, isPadTussen(Grid, Begin, Einde, NietTeGebruiken, Pad), Paden),
-	predsort(sorteerVolgensLength, Paden, SortedPaden),
+	forbiddenNodes(Grid, Tail, Gebruikt, ForbiddenNodes),
+	append(ForbiddenNodes, Gebruikt, NietTeGebruiken),
+	findPathTussen(Grid, Begin, Einde, NietTeGebruiken,nul,[Begin], GekozenPad),
+	%isPadTussen(Grid,Begin,Einde,NietTeGebruiken,GekozenPad),
+	%findall(Pad, isPadTussen(Grid, Begin, Einde, NietTeGebruiken, Pad), Paden),
+	%predsort(sorteerVolgensLength, Paden, SortedPaden),
 	%isPadTussen(Grid, Begin, Einde, NietTeGebruiken, gekozenPad),
-	member(GekozenPad, SortedPaden),
+	%member(GekozenPad, SortedPaden),
 	%\+ containsForbiddenNode(GekozenPad, ForbiddenNodes),
 	append(GekozenPad, Gebruikt, NewGebruikt),
-	othersHavePath(Grid,Tail, NewGebruikt),
+	%othersHavePath(Grid,Tail, NewGebruikt),
 	NewAcc = [connects(Linked,GekozenPad)|Acc],
 	vindLink(Grid,Tail,NewGebruikt,NewAcc, Solution).
 
@@ -91,32 +99,41 @@ containsForbiddenNode(GekozenPad, ForbiddenNodes):-
 	member(X, ForbiddenNodes).
 
 forbiddenNodes(Grid, Links, Gebruikt, ForbiddenNodes):-
-	allStartAndEndPos(Links,[],Positions),
+	allStartAndEndPos2(Links,[],Positions),
 	forbiddenNodes(Grid, Positions, Gebruikt, [], ForbiddenNodes).
 
 forbiddenNodes(_, [], _, Acc, Acc):-
 	!.
 
-forbiddenNodes(Grid, [Head|Tail], Gebruikt, Acc, ForbiddenNodes):-
-	findall(Pos2, (areConnected(Grid,Head,Pos2), \+ member(Pos2, Gebruikt), \+ member(Pos2, Acc)), Connections),
+forbiddenNodes(Grid, [bevat((Linked, Herkomst),Head)|Tail], Gebruikt, Acc, ForbiddenNodes):-
+	append(Gebruikt, Acc, All),
+	member(bevat((Linked,Herkomst2),Pos), All),
+	Herkomst2 \= Herkomst,
+	areConnected(Grid,Head,Pos),
+	forbiddenNodes(Grid, Tail, Gebruikt, Acc, ForbiddenNodes).
+
+forbiddenNodes(Grid, [bevat(Linked,Head)|Tail], Gebruikt, Acc, ForbiddenNodes):-	findall(Pos2, (areConnected(Grid,Head,Pos2), \+ member(bevat(_,Pos2), Gebruikt), \+ member(bevat(_,Pos2), Acc)), Connections),
 	length(Connections, Length),
 	(Length =:=1
 	->  Connections = [Head2],
-	    NewAcc = [Head2|Acc]
-	    %NewTail = [Head2|Tail]
-	;   NewAcc = Acc),
-	    %NewTail = Tail),
-	forbiddenNodes(Grid, Tail, Gebruikt, NewAcc, ForbiddenNodes).
+	    NewAcc = [bevat(Linked,Head2)|Acc],
+	    NewTail = [bevat(Linked,Head2)|Tail]
+	;   NewAcc = Acc,
+	    NewTail = Tail),
+	forbiddenNodes(Grid, NewTail, Gebruikt, NewAcc, ForbiddenNodes).
 
 
 testforbiddenNodes(ForbiddenNodes):-
-	Test = [link(1,pos(2,1),pos(4,4)),
-		link(2,pos(1,1),pos(2,2)),
-		link(3,pos(2,4),pos(5,4)),
-		link(4,pos(4,2),pos(2,5))
-	       ],
-	allStartAndEndPos(Test,[], Gebruikt),
-	forbiddenNodes(grid(5,5), Test, Gebruikt, ForbiddenNodes).
+	Test = [
+    link(1,pos(1,7),pos(7,6)),
+    link(2,pos(2,6),pos(3,2)),
+    link(3,pos(2,7),pos(6,5)),
+    link(4,pos(4,4),pos(5,3)),
+    link(5,pos(4,5),pos(7,7)),
+    link(6,pos(5,5),pos(6,6))
+],
+	allStartAndEndPos2(Test,[], Gebruikt),
+	forbiddenNodes(grid(7,7), Test, Gebruikt, ForbiddenNodes).
 
 %forbiddenNodes(Grid, [Link|Tail],Gebruikt, Acc, ForbiddenNodes):-
 %	Link = link(_, Begin, Einde),
@@ -133,6 +150,16 @@ testforbiddenNodes(ForbiddenNodes):-
 	%forbiddenNodes(Grid, Tail, Gebruikt, Forbidden2, ForbiddenNodes).
 
 %forbiddenNodes(_, [], _, Acc, Acc).
+
+findPathTussen(Grid, Last, Einde, _, _, Acc, [Einde|Acc]):-
+	areConnected(Grid, Last, Einde).
+
+findPathTussen(Grid, Last, Einde, Gebruikt, Dir, Acc, Pad):-
+	areConnected(Grid, Last, Pos),
+	\+ member(Pos, Gebruikt),
+	\+ member(Pos, Acc),
+	findPathTussen(Grid, Pos, Einde, Gebruikt, nul, [Pos|Acc], Pad).
+
 
 %Deze methode
 isPadTussen(Grid, Begin, Einde, Gebruikt, Pad):-
