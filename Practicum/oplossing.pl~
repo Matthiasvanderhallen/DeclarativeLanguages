@@ -326,10 +326,10 @@ maakVerplichteStappen(Grid,[bevat((Linked, Herkomst), Head)|Tail], Gebruikt, Ong
 % resterende uiteinden.
 maakVerplichteStappen(Grid,[bevat(Marker,Head)|Tail], Gebruikt, Ongebruikt, UiteindenAcc, NieuweUiteinden, NieuwGebruikt, NieuwOngebruikt, StapGemaakt):-
 	findall(Pos2, (areConnected(Grid,Head,Pos2), \+ member(bevat(_,Pos2),Gebruikt)), Connections),
-	Marker = (Linked, Herkomst),
-	append(Tail, UiteindenAcc, Uiteinden),
-	findall(Pos, (areConnected(Grid,Head, Pos), member(bevat((Linked, Herkomst2), Pos), Uiteinden), Herkomst2 \= Herkomst), Check),
-	length(Check, 0),
+	%Marker = (Linked, Herkomst),
+	%append(Tail, UiteindenAcc, Uiteinden),
+	%findall(Pos, (areConnected(Grid,Head, Pos), member(bevat((Linked, Herkomst2), Pos), Uiteinden), Herkomst2 \= Herkomst), Check),
+	%length(Check, 0),
 	length(Connections,Length),
 	(Length =:=1
 	->  Connections = [Head2],

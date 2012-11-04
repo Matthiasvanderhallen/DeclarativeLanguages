@@ -1,6 +1,6 @@
 % Voorstelling van de puzzels:
 % puzzle(PuzzleId,grid(NumberOfRows,NumberOfColumns), link(Label,pos(Row1,Column1),pos(Row2,Column2)), ...])
- 
+
 % Voorstelling van de oplossingen:
 % [connects(Label1,[pos(Row1,Column1), ..., pos(RowN,ColumnN)]), ...]
 
@@ -118,5 +118,27 @@ puzzle(11,grid(9,9),[
     link(7,pos(3,1),pos(2,2)),
     link(8,pos(4,3),pos(7,4)),
     link(9,pos(2,1),pos(9,4))
-]). 
+]).
+
+puzzle(12,grid(9,9),[
+    link(1,pos(2,2),pos(2,4)),
+    link(2,pos(2,5),pos(7,4)),
+    link(3,pos(3,3),pos(9,9)),
+    link(4,pos(3,4),pos(5,4)),
+    link(5,pos(4,1),pos(4,6)),
+    link(6,pos(5,1),pos(6,4)),
+    link(7,pos(6,5),pos(6,7)),
+    link(8,pos(7,3),pos(9,3))
+]).
+
+puzzle(13,grid(7,7),
+   [
+    link(1,pos(1,1),pos(2,4)),
+    link(2,pos(2,3),pos(3,1)),
+    link(3,pos(2,5),pos(4,3)),
+    link(4,pos(2,6),pos(6,1)),
+    link(5,pos(5,6),pos(6,2)),
+    link(6,pos(6,3),pos(6,6)),
+    link(7,pos(7,1),pos(5,7))
+   ]).
 
