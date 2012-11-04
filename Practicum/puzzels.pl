@@ -142,3 +142,16 @@ puzzle(13,grid(7,7),
     link(7,pos(7,1),pos(5,7))
    ]).
 
+puzzle(14,grid(9,9),
+   [
+    link(rood,pos(1,7),pos(3,4)),
+    link(appelblauw,pos(1,8),pos(4,4)),
+    link(groen,pos(1,9),pos(5,2)),
+    link(blauw,pos(2,2),pos(9,1)),
+    link(bruin,pos(3,1),pos(8,4)),
+    link(oranje,pos(5,8),pos(8,8)),
+    link(geel,pos(7,7),pos(7,9)),
+    link(roze,pos(6,5),pos(8,7)),
+    link(paars,pos(8,9),pos(9,6))
+   ]).
+
