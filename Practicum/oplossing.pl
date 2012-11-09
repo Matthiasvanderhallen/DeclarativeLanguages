@@ -1,41 +1,12 @@
 % Matthias van der Hallen
-% cw
+% Master computerwetenschappen
 :- ensure_loaded(puzzels).
 :- ensure_loaded(visualisatie).
 
-% Deze methode is strikt voor testing purposes. Deze methode
-% zoekt de solution voor elke puzzel die gedefinieerd werd,
-% en geeft ook steeds de time-statistieken.
-solveAlles:-
-	write('0.'),
-	time(show_solution(0)),
-	write('1.'),
-	time(show_solution(1)),
-	write('2.'),
-	time(show_solution(2)),
-	write('3.'),
-	time(show_solution(3)),
-	write('4.'),
-	time(show_solution(4)),
-	write('5.'),
-	time(show_solution(5)),
-	write('6.'),
-	time(show_solution(6)),
-	write('7.'),
-	time(show_solution(7)),
-	write('8.'),
-	time(show_solution(8)),
-	write('9.'),
-	time(show_solution(9)),
-	write('10.'),
-	time(show_solution(10)),
-	write('11.'),
-	time(show_solution(11)).
-
 % solve/2
 solve(PuzzleId,Solution) :-
-    puzzle(PuzzleId,Grid,Links),
-    arukone(Grid,Links,Solution).
+	puzzle(PuzzleId,Grid,Links),
+	arukone(Grid,Links,Solution).
 
 % arukone/3 - zelf te implementeren!
 %
@@ -53,9 +24,9 @@ solve(PuzzleId,Solution) :-
 % uiteinde steeds dezelfde redenering maken, tot we uiteindelijk voor
 % alle uiteinden alle verplichte stappen gezet hebben. Wanneer twee
 % uiteindes van dezelfde marker (Maar met een verschillende 'herkomst':
-% begin/eindmarker) elkaars neighbour zijn, dan komen de 2 aparte
-% segmenten samen, en is de volledige connectie gevonden. Er zijn nu
-% GEEN UITEINDEN meer voor deze connectie.
+% begin/eindmarker) elkaars neighbour zijn, dan kunnen de 2 aparte
+% segmenten samen komen, en is de volledige connectie gevonden. Er zijn
+% nu GEEN UITEINDEN meer voor deze connectie.
 %
 % We kunnen dit voor alle connecties tegelijk doen. Soms zijn er voor
 % alle bestaande uiteinden echter meerdere mogelijke 'volgende stappen'.
@@ -145,9 +116,9 @@ iteratie(_,[],Gebruikt,[],Gebruikt).
 iteratie(Grid, Uiteinden, Gebruikt, Ongebruikt, Solution):-
 	maakVerplichteStappen(Grid, Uiteinden, Gebruikt, Ongebruikt, NieuweUiteinden, NieuwGebruikt, NieuwOngebruikt, StapGemaakt),
 	(StapGemaakt == true
-	->  iteratie(Grid, NieuweUiteinden, NieuwGebruikt, NieuwOngebruikt, Solution)
-	;   maakWillekeurigeStap(Grid, NieuweUiteinden, Gebruikt, Ongebruikt, NieuweUiteinden2, NieuwGebruikt2, NieuwOngebruikt2),
-	    iteratie(Grid, NieuweUiteinden2, NieuwGebruikt2, NieuwOngebruikt2, Solution)
+	->	iteratie(Grid, NieuweUiteinden, NieuwGebruikt, NieuwOngebruikt, Solution)
+	;	maakWillekeurigeStap(Grid, NieuweUiteinden, Gebruikt, Ongebruikt, NieuweUiteinden2, NieuwGebruikt2, NieuwOngebruikt2),
+		iteratie(Grid, NieuweUiteinden2, NieuwGebruikt2, NieuwOngebruikt2, Solution)
 	).
 
 % maakWillekeurigeStap(Grid, Uiteinden, Gebruikt, Ongebruikt,
@@ -165,89 +136,12 @@ maakWillekeurigeStap(Grid, [bevat(Marker,Head)|Tail], Gebruikt, Ongebruikt, Nieu
 	findall(Pos, (areConnected(Grid, Head, Pos), member(Pos, Ongebruikt)), Connections),
 	length(Connections, Length),
 	(Length > 0
-	->  member(Pos2, Connections),
-            delete(Ongebruikt, Pos2, NieuwOngebruikt),
-	    NieuwGebruikt = [bevat(Marker,Pos2)|Gebruikt],
-	    NieuweUiteinden = [bevat(Marker,Pos2)|Tail]
-	;   maakWillekeurigeStap(Grid, Tail, Gebruikt, Ongebruikt, NieuweUiteinden, NieuwGebruikt, NieuwOngebruikt)
+	->	member(Pos2, Connections),
+		delete(Ongebruikt, Pos2, NieuwOngebruikt),
+		NieuwGebruikt = [bevat(Marker,Pos2)|Gebruikt],
+		NieuweUiteinden = [bevat(Marker,Pos2)|Tail]
+	;	maakWillekeurigeStap(Grid, Tail, Gebruikt, Ongebruikt, NieuweUiteinden, NieuwGebruikt, NieuwOngebruikt)
 	).
-
-% Vindt alle pos(x,y) termen die nog niet in een bevat term van
-% de gegeven lijst 'Gebruikt' voorkomen.
-% - Grid: De gegeven grid, waaruit de XMax en YMax worden gehaald
-% - Gebruikt: De lijst van bevat termen.
-% - Ongebruikt: De lijst van posities die nog niet bezet zijn.
-vindOngebruikt(grid(XMax, YMax), Gebruikt, Ongebruikt):-
-	lijstTot(XMax,XCoords),
-	lijstTot(YMax,YCoords),
-	findall(Pos,(member(X,XCoords), member(Y,YCoords), Pos = pos(X,Y),\+ member(bevat((_),Pos), Gebruikt)),Ongebruikt).
-
-% Bouwt een lijst op van 1 tot het gegeven getal
-% - Getal: Het maximum van de op te bouwen lijst
-% - Lijst: Een strikt stijgende lijst, van 1 tot Getal.
-lijstTot(Getal, Lijst):-
-	lijstTot(Getal, [1], Lijst).
-
-lijstTot(Getal, [Laatste|Tail], Lijst):-
-	(Laatste == Getal
-	->
-	    Lijst = [Laatste|Tail]
-	;   Nieuw is Laatste+1,
-	    lijstTot(Getal, [Nieuw, Laatste|Tail], Lijst)
-	).
-
-% Deze methode vindt al de markers die in het probleem gebruikt worden.
-% - Links zijn de links die gevormd moeten worden in het probleem,
-% - Markers zijn de markers die gebruikt worden.
-alleMarkers(Links, Markers):-
-	alleMarkers(Links, [], Markers).
-
-alleMarkers([], MarkerAcc, MarkerAcc).
-
-alleMarkers([link(Marker, _, _)|Tail], MarkerAcc, Markers):-
-	alleMarkers(Tail, [Marker|MarkerAcc], Markers).
-
-% Zet de oplossing opgeslagen in Gebruikt, die bestaat uit een lijst van
-% bevat((Marker,Herkomst), pos(x,y)) termen, om naar de vereiste vorm
-% van Solution, namelijk [connects(Marker, [pos(x,y),...]). Het doet dit
-% door het lijstje van Markers af te gaan en voor elke marker de hulp
-% methode vanGebruiktNaarSolutionVoorMarker(Marker,Gebruikt,MarkerSol)
-% op te roepen.
-% - Markers: zijn de Markers gebruikt in het probleem
-% - Gebruikt: is de verzameling van bevat((Marker,Herkomst), pos(x,y))
-%	     termen
-% - Solution: Is de verzameling van connects(Marker, [pos(x,y),..])
-vanGebruiktNaarSolution(Markers, Gebruikt, Solution):-
-	vanGebruiktNaarSolution(Markers, Gebruikt, [], Solution).
-
-vanGebruiktNaarSolution([], _, SolutionAcc, SolutionAcc).
-
-vanGebruiktNaarSolution([Marker|Tail], Gebruikt, SolutionAcc, Solution):-
-       vanGebruiktNaarSolutionVoorMarker(Marker,Gebruikt,MarkerSolution),
-       vanGebruiktNaarSolution(Tail, Gebruikt, [MarkerSolution|SolutionAcc], Solution).
-
-
-% Zet de oplossing opgeslagen in Gebruikt, die bestaat uit een lijst van
-% bevat((Marker,Herkomst), pos(x,y)) termen om naar de vereiste vorm
-% voor één enkele marker, namelijk connects(Marker, [pos(x,y),...]).
-% Het doet dit door de lijst Gebruikt af te lopen en elke keer dat Marker in de
-% bevat term overeen komt met de gegeven Marker de positie aan
-% MarkerSolution toe te voegen.
-% - Marker: De Marker waarvoor de connects term opgebouwd moet worden
-% - Gebruikt: De lijst van bevat termen.
-% - MarkerSolution: de connects term voor de gegeven marker.
-vanGebruiktNaarSolutionVoorMarker(Marker,Gebruikt, MarkerSolution):-
-	vanGebruiktNaarSolutionVoorMarker(Marker, Gebruikt, [], Sol),
-	MarkerSolution=connects(Marker, Sol).
-
-vanGebruiktNaarSolutionVoorMarker(_, [], SolutionAcc, SolutionAcc).
-
-vanGebruiktNaarSolutionVoorMarker(Marker, [bevat((Mark,_), _)|Tail], SolutionAcc, Solution):-
-	Mark \= Marker,
-	vanGebruiktNaarSolutionVoorMarker(Marker, Tail, SolutionAcc, Solution).
-
-vanGebruiktNaarSolutionVoorMarker(Marker, [bevat((Marker,_), Head)|Tail], SolutionAcc, Solution):-
-	vanGebruiktNaarSolutionVoorMarker(Marker, Tail, [Head|SolutionAcc], Solution).
 
 % maakVerplichteStappen(Grid, Uiteinden, Gebruikt, Ongebruikt,
 % NieuweUiteinden, NieuwGebruikt, NieuwOngebruikt, StapGemaakt)
@@ -296,20 +190,10 @@ maakVerplichteStappen(Grid,[bevat((Linked, Herkomst), Head)|Tail], Gebruikt, Ong
 % \+member(bevat(_,Pos2, Gebruikt). (member(Pos2, Ongebruikt) zou ook
 % werken ipv \+ member(bevat(_,Pos2,Gebruikt))).
 %
-% Vervolgens checkt het dat geen van de buren het corresponderende
-% uiteinde is van dezelfde marker maar vertrekkend vanaf het andere
-% eind. Zolang de overload van maakVerplichteStappen die uiteinden
-% samenvoegt éérst in de codefile staat, zou deze Check in principe
-% nooit mogen falen, daar deze de verbonden uiteinden onmiddelijk
-% verwijderd uit de lijst van uiteinden. Om beide versies toch strikt
-% disjunct te houden (Wat me belangrijk lijkt voor het geval dat iemand
-% ooit de volgorde van overloads zou veranderen), is deze check toch
-% opgenomen.
-%
 % Wanneer de lijst van ongebruikte neighbours voor het eerste uiteinde
 % exact één element bevat, dan wordt dit het nieuwe uiteinde en
 % wordt vooraan Tail toegevoegd zodat het als eerstvolgende opnieuw
-% gecheckt wordt voor verplichte stappen/uiteindes samenvoegen.
+% gecheckt wordt voor verplichte stappen of uiteindes samenvoegen.
 % en verwijderd uit Ongebruikt. Het wordt nog niet toegevoegd aan
 % UiteindenAcc, aangezien de recursieve oproep vanaf dit uiteinde
 % mogelijks nóg een stap kan doen. Vervolgens wordt StapGemaakt gelijk
@@ -325,25 +209,30 @@ maakVerplichteStappen(Grid,[bevat((Linked, Herkomst), Head)|Tail], Gebruikt, Ong
 % Accumulator. maakVerplichteStappen wordt recursief aangeroepen op de
 % resterende uiteinden.
 maakVerplichteStappen(Grid,[bevat(Marker,Head)|Tail], Gebruikt, Ongebruikt, UiteindenAcc, NieuweUiteinden, NieuwGebruikt, NieuwOngebruikt, StapGemaakt):-
+	%Deze uitgecommented code is voor de interpretatie waarin er een unieke oplossing is die alle Markers verbindt, en
+	%en deze unieke oplossing gebruikt alle vakjes. Dwz. in de interpretatie dat er geen oplossingen zijn voor de puzzel die alle
+	%markers verbinden zonder alle vakjes ook te gebruiken. Wanneer men deze interpretatie aanhoudt dan MOETEN 2 uiteinden van dezelfde marker
+	%namelijk altijd verbonden worden indien mogelijk.
+	%
+	%Marker = (Linked, Herkomst),
+	%append(Tail, UiteindenAcc, Uiteinden),
+	%findall(Pos, (areConnected(Grid,Head, Pos), member(bevat((Linked, Herkomst2), Pos), Uiteinden), Herkomst2 \= Herkomst), Check),
+	%length(Check, 0),
 	findall(Pos2, (areConnected(Grid,Head,Pos2), \+ member(bevat(_,Pos2),Gebruikt)), Connections),
-	Marker = (Linked, Herkomst),
-	append(Tail, UiteindenAcc, Uiteinden),
-	findall(Pos, (areConnected(Grid,Head, Pos), member(bevat((Linked, Herkomst2), Pos), Uiteinden), Herkomst2 \= Herkomst), Check),
-	length(Check, 0),
 	length(Connections,Length),
 	(Length =:=1
-	->  Connections = [Head2],
-	    GebruiktN = [bevat((Marker),Head2)|Gebruikt], %Voeg de nieuwe stap toe aan gebruikt met dezelfde marker
-	    TailN = [bevat((Marker),Head2)|Tail], %Maak het de volgende node die je processt.
-	    delete(Ongebruikt, Head2, OngebruiktN),
-	    UiteindenAccN = UiteindenAcc,
-	    StapGemaakt = true,
-	    maakVerplichteStappen(Grid, TailN, GebruiktN, OngebruiktN, UiteindenAccN, NieuweUiteinden, NieuwGebruikt, NieuwOngebruikt, _)
-	;(Length =:=0
-	 ->  fail
-	 ;  UiteindenAccN = [bevat((Marker),Head)|UiteindenAcc], %Als we geen stap hebben kunnen maken is dit een uiteinde
-	    maakVerplichteStappen(Grid, Tail, Gebruikt, Ongebruikt, UiteindenAccN, NieuweUiteinden, NieuwGebruikt, NieuwOngebruikt, StapGemaakt)
-	 )
+	->	Connections = [Head2],
+		GebruiktN = [bevat((Marker),Head2)|Gebruikt], %Voeg de nieuwe stap toe aan gebruikt met dezelfde marker
+		TailN = [bevat((Marker),Head2)|Tail], %Maak het de volgende node die je processt.
+		delete(Ongebruikt, Head2, OngebruiktN),
+		UiteindenAccN = UiteindenAcc,
+		StapGemaakt = true,
+		maakVerplichteStappen(Grid, TailN, GebruiktN, OngebruiktN, UiteindenAccN, NieuweUiteinden, NieuwGebruikt, NieuwOngebruikt, _)
+	;	(Length =:=0
+		->	fail
+		;	UiteindenAccN = [bevat((Marker),Head)|UiteindenAcc], %Als we geen stap hebben kunnen maken is dit een uiteinde
+			maakVerplichteStappen(Grid, Tail, Gebruikt, Ongebruikt, UiteindenAccN, NieuweUiteinden, NieuwGebruikt, NieuwOngebruikt, StapGemaakt)
+		)
 	).
 
 % allStartAndEndPosities(Links, Acc, Set)
@@ -359,6 +248,82 @@ allStartAndEndPosities([], Acc, Acc).
 allStartAndEndPosities([Head|Tail], Acc, Set):-
 	Head = link(Linked, Start, Einde),
 	allStartAndEndPosities(Tail, [bevat((Linked,start),Start),bevat((Linked,einde),Einde)|Acc], Set).
+
+% Vindt alle pos(x,y) termen die nog niet in een bevat term van
+% de gegeven lijst 'Gebruikt' voorkomen.
+% - Grid: De gegeven grid, waaruit de XMax en YMax worden gehaald
+% - Gebruikt: De lijst van bevat termen.
+% - Ongebruikt: De lijst van posities die nog niet bezet zijn.
+vindOngebruikt(grid(XMax, YMax), Gebruikt, Ongebruikt):-
+	lijstTot(XMax,XCoords),
+	lijstTot(YMax,YCoords),
+	findall(Pos,(member(X,XCoords), member(Y,YCoords), Pos = pos(X,Y),\+ member(bevat((_),Pos), Gebruikt)),Ongebruikt).
+
+% Bouwt een lijst op van 1 tot het gegeven getal
+% - Getal: Het maximum van de op te bouwen lijst
+% - Lijst: Een strikt stijgende lijst, van 1 tot Getal.
+lijstTot(Getal, Lijst):-
+	lijstTot(Getal, [1], Lijst).
+
+lijstTot(Getal, [Laatste|Tail], Lijst):-
+	(Laatste == Getal
+	->	Lijst = [Laatste|Tail]
+	;	Nieuw is Laatste+1,
+		lijstTot(Getal, [Nieuw, Laatste|Tail], Lijst)
+	).
+
+% Deze methode vindt al de markers die in het probleem gebruikt worden.
+% - Links zijn de links die gevormd moeten worden in het probleem,
+% - Markers zijn de markers die gebruikt worden.
+alleMarkers(Links, Markers):-
+	alleMarkers(Links, [], Markers).
+
+alleMarkers([], MarkerAcc, MarkerAcc).
+
+alleMarkers([link(Marker, _, _)|Tail], MarkerAcc, Markers):-
+	alleMarkers(Tail, [Marker|MarkerAcc], Markers).
+
+% Zet de oplossing opgeslagen in Gebruikt, die bestaat uit een lijst van
+% bevat((Marker,Herkomst), pos(x,y)) termen, om naar de vereiste vorm
+% van Solution, namelijk [connects(Marker, [pos(x,y),...]). Het doet dit
+% door het lijstje van Markers af te gaan en voor elke marker de hulp
+% methode vanGebruiktNaarSolutionVoorMarker(Marker,Gebruikt,MarkerSol)
+% op te roepen.
+% - Markers: zijn de Markers gebruikt in het probleem
+% - Gebruikt: is de verzameling van bevat((Marker,Herkomst), pos(x,y))
+%	     termen
+% - Solution: Is de verzameling van connects(Marker, [pos(x,y),..])
+vanGebruiktNaarSolution(Markers, Gebruikt, Solution):-
+	vanGebruiktNaarSolution(Markers, Gebruikt, [], Solution).
+
+vanGebruiktNaarSolution([], _, SolutionAcc, SolutionAcc).
+
+vanGebruiktNaarSolution([Marker|Tail], Gebruikt, SolutionAcc, Solution):-
+	vanGebruiktNaarSolutionVoorMarker(Marker,Gebruikt,MarkerSolution),
+	vanGebruiktNaarSolution(Tail, Gebruikt, [MarkerSolution|SolutionAcc], Solution).
+
+
+% Zet de oplossing opgeslagen in Gebruikt, die bestaat uit een lijst van
+% bevat((Marker,Herkomst), pos(x,y)) termen om naar de vereiste vorm
+% voor één enkele marker, namelijk connects(Marker, [pos(x,y),...]).
+% Het doet dit door de lijst Gebruikt af te lopen en elke keer dat Marker in de
+% bevat term overeen komt met de gegeven Marker de positie aan
+% MarkerSolution toe te voegen.
+% - Marker: De Marker waarvoor de connects term opgebouwd moet worden
+% - Gebruikt: De lijst van bevat termen.
+% - MarkerSolution: de connects term voor de gegeven marker.
+vanGebruiktNaarSolutionVoorMarker(Marker,Gebruikt, MarkerSolution):-
+	vanGebruiktNaarSolutionVoorMarker(Marker, Gebruikt, [], Sol),
+	MarkerSolution=connects(Marker, Sol).
+
+vanGebruiktNaarSolutionVoorMarker(_, [], SolutionAcc, SolutionAcc).
+
+vanGebruiktNaarSolutionVoorMarker(Marker, [bevat((Mark,_), _)|Tail], SolutionAcc, Solution):-
+	Mark \= Marker,
+	vanGebruiktNaarSolutionVoorMarker(Marker, Tail, SolutionAcc, Solution).
+
+vanGebruiktNaarSolutionVoorMarker(Marker, [bevat((Marker,_), Head)|Tail], SolutionAcc, Solution):-
+	vanGebruiktNaarSolutionVoorMarker(Marker, Tail, [Head|SolutionAcc], Solution).
 
 % areConnected(Grid, Pos1, Pos2).
 % Vindt alle pos termen die links, rechts, boven of onder de gegeven
@@ -405,9 +370,3 @@ onGrid(Grid,Pos) :-
 	Y1>0,
 	X1=<MaxX,
 	Y1=<MaxY.
-
-
-
-
-
-
